@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#0a0a0b" />
+  <title>SplitClo — 顏值時鐘</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0a0b;
+      --fg: #f5f5f7;
+      --muted: #8e8e93;
+      --accent: #ffffff;
+      --split-line: rgba(255, 255, 255, 0.08);
+      --card: rgba(255, 255, 255, 0.03);
+      --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+      --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+      --spring: cubic-bezier(0.32, 0.72, 0, 1);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Portrait lock overlay */
+    .orient-lock {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5rem;
+      background: var(--bg);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s var(--ease-out);
+    }
+
+    .orient-lock.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .orient-icon {
+      width: 64px;
+      height: 64px;
+      border: 2px solid var(--muted);
+      border-radius: 12px;
+      position: relative;
+      animation: rotate-hint 2.4s var(--ease-in-out) infinite;
+    }
+
+    .orient-icon::before {
+      content: "";
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 20px;
+      height: 4px;
+      background: var(--muted);
+      border-radius: 2px;
+    }
+
+    @keyframes rotate-hint {
+      0%, 20% { transform: rotate(0deg); }
+      40%, 60% { transform: rotate(90deg); }
+      80%, 100% { transform: rotate(0deg); }
+    }
+
+    .orient-text {
+      font-size: 0.9375rem;
+      font-weight: 400;
+      letter-spacing: 0.02em;
+      color: var(--muted);
+      text-align: center;
+      max-width: 240px;
+      line-height: 1.5;
+    }
+
+    .orient-brand {
+      position: absolute;
+      bottom: 2.5rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      opacity: 0.6;
+    }
+
+    /* Main clock */
+    .app {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 1;
+      transition: opacity 0.5s var(--ease-out);
+    }
+
+    .app.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .clock-shell {
+      position: relative;
+      width: min(92vw, 920px);
+      aspect-ratio: 16 / 9;
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.25rem;
+    }
+
+    /* Split visual — two soft panels */
+    .split-frame {
+      position: absolute;
+      inset: 0;
+      border-radius: 28px;
+      background: var(--card);
+      border: 1px solid var(--split-line);
+      overflow: hidden;
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.02),
+        0 24px 80px -24px rgba(0, 0, 0, 0.6);
+    }
+
+    .split-frame::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 1px;
+      height: 100%;
+      background: linear-gradient(
+        to bottom,
+        transparent 8%,
+        var(--split-line) 30%,
+        var(--split-line) 70%,
+        transparent 92%
+      );
+      transform: translateX(-50%);
+      z-index: 2;
+    }
+
+    .split-half {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 50%;
+      transition: background 0.8s var(--ease-out);
+    }
+
+    .split-half.left {
+      left: 0;
+      background: radial-gradient(ellipse at 30% 40%, rgba(255, 255, 255, 0.04) 0%, transparent 70%);
+    }
+
+    .split-half.right {
+      right: 0;
+      background: radial-gradient(ellipse at 70% 60%, rgba(255, 255, 255, 0.03) 0%, transparent 70%);
+    }
+
+    /* Time display */
+    .time-row {
+      position: relative;
+      z-index: 5;
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 0.15em;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
+      letter-spacing: -0.04em;
+      user-select: none;
+    }
+
+    .digit-group {
+      display: flex;
+      gap: 0.02em;
+    }
+
+    .digit {
+      font-family: "Geist", sans-serif;
+      font-weight: 300;
+      font-size: clamp(4.5rem, 18vw, 9.5rem);
+      line-height: 0.9;
+      color: var(--fg);
+      position: relative;
+      display: inline-block;
+      min-width: 0.55em;
+      text-align: center;
+      transition: opacity 0.25s var(--ease-out), transform 0.35s var(--spring);
+    }
+
+    .digit.flip {
+      animation: digit-flip 0.45s var(--spring);
+    }
+
+    @keyframes digit-flip {
+      0% { opacity: 1; transform: translateY(0) scale(1); }
+      35% { opacity: 0.35; transform: translateY(-8%) scale(0.97); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .colon {
+      font-family: "Geist", sans-serif;
+      font-weight: 300;
+      font-size: clamp(3.8rem, 15vw, 8rem);
+      line-height: 0.9;
+      color: var(--fg);
+      opacity: 0.55;
+      margin: 0 -0.05em;
+      animation: colon-pulse 1s steps(1) infinite;
+    }
+
+    @keyframes colon-pulse {
+      0%, 49% { opacity: 0.55; }
+      50%, 100% { opacity: 0.18; }
+    }
+
+    /* Seconds as subtle accent */
+    .seconds {
+      position: absolute;
+      right: 8%;
+      bottom: 18%;
+      font-family: "JetBrains Mono", monospace;
+      font-weight: 400;
+      font-size: clamp(0.9rem, 2.8vw, 1.35rem);
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      opacity: 0.7;
+      z-index: 5;
+      transition: opacity 0.3s var(--ease-out);
+    }
+
+    /* Date & meta */
+    .meta {
+      position: relative;
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.35rem;
+      margin-top: 0.5rem;
+    }
+
+    .date {
+      font-size: clamp(0.8rem, 2.2vw, 1.05rem);
+      font-weight: 400;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .brand {
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      opacity: 0.45;
+      margin-top: 0.75rem;
+    }
+
+    /* Ambient glow */
+    .glow {
+      position: absolute;
+      width: 60%;
+      height: 40%;
+      top: 30%;
+      left: 20%;
+      background: radial-gradient(ellipse, rgba(255, 255, 255, 0.04) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 1;
+      filter: blur(40px);
+      animation: glow-breathe 8s var(--ease-in-out) infinite;
+    }
+
+    @keyframes glow-breathe {
+      0%, 100% { opacity: 0.6; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.05); }
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      .digit.flip,
+      .orient-icon,
+      .colon,
+      .glow {
+        animation: none !important;
+      }
+      .orient-icon {
+        transform: rotate(90deg);
+      }
+      .colon {
+        opacity: 0.4;
+      }
+    }
+
+    /* Landscape enforcement via media + JS */
+    @media (orientation: portrait) {
+      .app {
+        opacity: 0;
+        pointer-events: none;
+      }
+      .orient-lock {
+        opacity: 1;
+        pointer-events: auto;
+      }
+    }
+
+    @media (orientation: landscape) {
+      .orient-lock {
+        opacity: 0;
+        pointer-events: none;
+      }
+      .app {
+        opacity: 1;
+      }
+    }
+
+    /* Small landscape refinements */
+    @media (max-height: 420px) and (orientation: landscape) {
+      .digit {
+        font-size: clamp(3.2rem, 14vw, 6.5rem);
+      }
+      .clock-shell {
+        gap: 0.6rem;
+      }
+      .seconds {
+        bottom: 14%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Portrait lock -->
+  <div class="orient-lock" id="orientLock" aria-live="polite">
+    <div class="orient-icon" aria-hidden="true"></div>
+    <p class="orient-text">請將手機橫過來<br />才能使用 SplitClo</p>
+    <span class="orient-brand">SplitClo</span>
+  </div>
+
+  <!-- Clock -->
+  <div class="app" id="app">
+    <div class="clock-shell">
+      <div class="split-frame">
+        <div class="split-half left"></div>
+        <div class="split-half right"></div>
+        <div class="glow"></div>
+      </div>
+
+      <div class="time-row" id="timeRow" aria-label="目前時間">
+        <div class="digit-group" id="hours">
+          <span class="digit" data-pos="h1">0</span>
+          <span class="digit" data-pos="h2">0</span>
+        </div>
+        <span class="colon">:</span>
+        <div class="digit-group" id="minutes">
+          <span class="digit" data-pos="m1">0</span>
+          <span class="digit" data-pos="m2">0</span>
+        </div>
+      </div>
+
+      <div class="seconds" id="seconds">00</div>
+
+      <div class="meta">
+        <div class="date" id="date"></div>
+        <div class="brand">SplitClo</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const digits = {
+        h1: document.querySelector('[data-pos="h1"]'),
+        h2: document.querySelector('[data-pos="h2"]'),
+        m1: document.querySelector('[data-pos="m1"]'),
+        m2: document.querySelector('[data-pos="m2"]'),
+      };
+      const secondsEl = document.getElementById("seconds");
+      const dateEl = document.getElementById("date");
+      const orientLock = document.getElementById("orientLock");
+      const app = document.getElementById("app");
+
+      const weekdays = ["週日", "週一", "週二", "週三", "週四", "週五", "週六"];
+      const months = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
+
+      let last = { h1: "", h2: "", m1: "", m2: "", s: "" };
+
+      function pad(n) {
+        return n.toString().padStart(2, "0");
+      }
+
+      function update() {
+        const now = new Date();
+        const h = pad(now.getHours());
+        const m = pad(now.getMinutes());
+        const s = pad(now.getSeconds());
+
+        const next = {
+          h1: h[0],
+          h2: h[1],
+          m1: m[0],
+          m2: m[1],
+          s: s,
+        };
+
+        // Animate only changed digits
+        Object.keys(digits).forEach((key) => {
+          if (next[key] !== last[key]) {
+            const el = digits[key];
+            el.classList.remove("flip");
+            // Force reflow
+            void el.offsetWidth;
+            el.textContent = next[key];
+            el.classList.add("flip");
+            last[key] = next[key];
+          }
+        });
+
+        if (next.s !== last.s) {
+          secondsEl.textContent = next.s;
+          last.s = next.s;
+        }
+
+        // Date (update less frequently)
+        const day = now.getDate();
+        const weekday = weekdays[now.getDay()];
+        const month = months[now.getMonth()];
+        dateEl.textContent = `${month}${day}日 · ${weekday}`;
+      }
+
+      function checkOrientation() {
+        const isPortrait = window.matchMedia("(orientation: portrait)").matches;
+        // Also check dimensions as fallback for some devices
+        const portraitBySize = window.innerHeight > window.innerWidth;
+
+        if (isPortrait || portraitBySize) {
+          orientLock.classList.add("visible");
+          app.classList.add("hidden");
+        } else {
+          orientLock.classList.remove("visible");
+          app.classList.remove("hidden");
+        }
+      }
+
+      // Initial
+      update();
+      checkOrientation();
+
+      // Tick every second aligned to real second
+      function scheduleNext() {
+        const now = Date.now();
+        const delay = 1000 - (now % 1000);
+        setTimeout(() => {
+          update();
+          scheduleNext();
+        }, delay);
+      }
+      scheduleNext();
+
+      // Orientation
+      window.addEventListener("orientationchange", () => {
+        setTimeout(checkOrientation, 100);
+      });
+      window.addEventListener("resize", checkOrientation);
+      // Media query listener
+      const mq = window.matchMedia("(orientation: portrait)");
+      if (mq.addEventListener) {
+        mq.addEventListener("change", checkOrientation);
+      } else if (mq.addListener) {
+        mq.addListener(checkOrientation);
+      }
+
+      // Prevent zoom / scroll
+      document.addEventListener("gesturestart", (e) => e.preventDefault());
+      document.addEventListener("touchmove", (e) => {
+        if (e.touches.length > 1) e.preventDefault();
+      }, { passive: false });
+    })();
+  </script>
+</body>
+</html>
