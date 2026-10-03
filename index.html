@@ -5,22 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="theme-color" content="#0a0a0b" />
+  <meta name="theme-color" content="#07070a" />
   <title>SplitClo — 顏值時鐘</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #0a0a0b;
-      --fg: #f5f5f7;
-      --muted: #8e8e93;
-      --accent: #ffffff;
-      --split-line: rgba(255, 255, 255, 0.08);
-      --card: rgba(255, 255, 255, 0.03);
-      --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-      --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
-      --spring: cubic-bezier(0.32, 0.72, 0, 1);
+      --bg: #07070a;
+      --fg: #f4f4f6;
+      --muted: #9a9aa3;
+      --soft: rgba(255, 255, 255, 0.06);
+      --split-line: rgba(255, 255, 255, 0.09);
+      --card: rgba(255, 255, 255, 0.025);
+      --accent: #a78bfa;
+      --accent-soft: rgba(167, 139, 250, 0.15);
+      --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+      --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+      --spring: cubic-bezier(0.34, 1.2, 0.64, 1);
+      --spring-soft: cubic-bezier(0.25, 1.1, 0.4, 1);
     }
 
     * {
@@ -39,9 +42,10 @@
       font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
+      touch-action: manipulation;
     }
 
-    /* Portrait lock overlay */
+    /* ── Portrait lock ── */
     .orient-lock {
       position: fixed;
       inset: 0;
@@ -50,67 +54,60 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 1.5rem;
+      gap: 1.75rem;
       background: var(--bg);
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.4s var(--ease-out);
+      transition: opacity 0.55s var(--ease-out);
     }
-
     .orient-lock.visible {
       opacity: 1;
       pointer-events: auto;
     }
-
     .orient-icon {
-      width: 64px;
-      height: 64px;
+      width: 72px;
+      height: 72px;
       border: 2px solid var(--muted);
-      border-radius: 12px;
+      border-radius: 16px;
       position: relative;
-      animation: rotate-hint 2.4s var(--ease-in-out) infinite;
+      animation: rotate-hint 2.8s var(--ease-in-out) infinite;
     }
-
     .orient-icon::before {
       content: "";
       position: absolute;
-      top: 8px;
+      top: 10px;
       left: 50%;
       transform: translateX(-50%);
-      width: 20px;
+      width: 22px;
       height: 4px;
       background: var(--muted);
       border-radius: 2px;
     }
-
     @keyframes rotate-hint {
-      0%, 20% { transform: rotate(0deg); }
-      40%, 60% { transform: rotate(90deg); }
-      80%, 100% { transform: rotate(0deg); }
+      0%, 18% { transform: rotate(0deg); }
+      38%, 62% { transform: rotate(90deg); }
+      82%, 100% { transform: rotate(0deg); }
     }
-
     .orient-text {
-      font-size: 0.9375rem;
-      font-weight: 400;
-      letter-spacing: 0.02em;
+      font-size: 1rem;
+      font-weight: 500;
+      letter-spacing: 0.03em;
       color: var(--muted);
       text-align: center;
-      max-width: 240px;
-      line-height: 1.5;
+      line-height: 1.55;
     }
-
     .orient-brand {
       position: absolute;
-      bottom: 2.5rem;
-      font-size: 0.75rem;
-      font-weight: 500;
-      letter-spacing: 0.12em;
+      bottom: 2.8rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.16em;
       text-transform: uppercase;
       color: var(--muted);
-      opacity: 0.6;
+      opacity: 0.55;
     }
 
-    /* Main clock */
+    /* ── Main app ── */
     .app {
       position: fixed;
       inset: 0;
@@ -119,39 +116,96 @@
       align-items: center;
       justify-content: center;
       opacity: 1;
-      transition: opacity 0.5s var(--ease-out);
+      transition: opacity 0.6s var(--ease-out);
     }
-
     .app.hidden {
       opacity: 0;
       pointer-events: none;
     }
 
+    /* Ambient layers */
+    .ambient {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.35;
+      animation: orb-float 18s var(--ease-in-out) infinite;
+    }
+    .orb-1 {
+      width: 55vw;
+      height: 55vw;
+      top: -15%;
+      left: -10%;
+      background: radial-gradient(circle, rgba(167, 139, 250, 0.25) 0%, transparent 70%);
+      animation-duration: 22s;
+    }
+    .orb-2 {
+      width: 45vw;
+      height: 45vw;
+      bottom: -20%;
+      right: -8%;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.2) 0%, transparent 70%);
+      animation-duration: 26s;
+      animation-delay: -6s;
+    }
+    .orb-3 {
+      width: 30vw;
+      height: 30vw;
+      top: 40%;
+      left: 55%;
+      background: radial-gradient(circle, rgba(236, 72, 153, 0.12) 0%, transparent 70%);
+      animation-duration: 20s;
+      animation-delay: -12s;
+    }
+    @keyframes orb-float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(4%, -3%) scale(1.06); }
+      66% { transform: translate(-3%, 4%) scale(0.96); }
+    }
+
+    .noise {
+      position: absolute;
+      inset: 0;
+      opacity: 0.035;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Clock shell */
     .clock-shell {
       position: relative;
-      width: min(92vw, 920px);
+      z-index: 5;
+      width: min(94vw, 960px);
       aspect-ratio: 16 / 9;
-      max-height: 88vh;
+      max-height: 78vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 1.25rem;
+      gap: 1.1rem;
     }
 
-    /* Split visual — two soft panels */
     .split-frame {
       position: absolute;
       inset: 0;
-      border-radius: 28px;
+      border-radius: 32px;
       background: var(--card);
       border: 1px solid var(--split-line);
       overflow: hidden;
       box-shadow:
         0 0 0 1px rgba(255, 255, 255, 0.02),
-        0 24px 80px -24px rgba(0, 0, 0, 0.6);
+        0 32px 100px -28px rgba(0, 0, 0, 0.7),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      transition: border-color 0.8s var(--ease-out), box-shadow 0.8s var(--ease-out);
     }
-
     .split-frame::before {
       content: "";
       position: absolute;
@@ -161,152 +215,281 @@
       height: 100%;
       background: linear-gradient(
         to bottom,
-        transparent 8%,
-        var(--split-line) 30%,
-        var(--split-line) 70%,
-        transparent 92%
+        transparent 6%,
+        var(--split-line) 28%,
+        var(--split-line) 72%,
+        transparent 94%
       );
       transform: translateX(-50%);
       z-index: 2;
     }
-
     .split-half {
       position: absolute;
       top: 0;
       bottom: 0;
       width: 50%;
-      transition: background 0.8s var(--ease-out);
     }
-
     .split-half.left {
       left: 0;
-      background: radial-gradient(ellipse at 30% 40%, rgba(255, 255, 255, 0.04) 0%, transparent 70%);
+      background: radial-gradient(ellipse at 25% 35%, rgba(167, 139, 250, 0.07) 0%, transparent 65%);
     }
-
     .split-half.right {
       right: 0;
-      background: radial-gradient(ellipse at 70% 60%, rgba(255, 255, 255, 0.03) 0%, transparent 70%);
+      background: radial-gradient(ellipse at 75% 65%, rgba(99, 102, 241, 0.06) 0%, transparent 65%);
     }
 
-    /* Time display */
+    /* Time */
     .time-row {
       position: relative;
-      z-index: 5;
+      z-index: 6;
       display: flex;
       align-items: baseline;
       justify-content: center;
-      gap: 0.15em;
+      gap: 0.12em;
       font-variant-numeric: tabular-nums;
       font-feature-settings: "tnum";
-      letter-spacing: -0.04em;
+      letter-spacing: -0.035em;
       user-select: none;
     }
-
     .digit-group {
       display: flex;
-      gap: 0.02em;
+      gap: 0.015em;
     }
-
     .digit {
       font-family: "Geist", sans-serif;
-      font-weight: 300;
-      font-size: clamp(4.5rem, 18vw, 9.5rem);
-      line-height: 0.9;
+      font-weight: 600;
+      font-size: clamp(4.8rem, 19vw, 10rem);
+      line-height: 0.88;
       color: var(--fg);
       position: relative;
       display: inline-block;
-      min-width: 0.55em;
+      min-width: 0.56em;
       text-align: center;
-      transition: opacity 0.25s var(--ease-out), transform 0.35s var(--spring);
+      will-change: transform, opacity;
     }
-
     .digit.flip {
-      animation: digit-flip 0.45s var(--spring);
+      animation: digit-flip 0.55s var(--spring-soft);
     }
-
     @keyframes digit-flip {
-      0% { opacity: 1; transform: translateY(0) scale(1); }
-      35% { opacity: 0.35; transform: translateY(-8%) scale(0.97); }
-      100% { opacity: 1; transform: translateY(0) scale(1); }
+      0% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+      28% { opacity: 0.25; transform: translateY(-12%) scale(0.94); filter: blur(1.5px); }
+      100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
     }
-
     .colon {
       font-family: "Geist", sans-serif;
-      font-weight: 300;
-      font-size: clamp(3.8rem, 15vw, 8rem);
-      line-height: 0.9;
+      font-weight: 500;
+      font-size: clamp(4rem, 16vw, 8.5rem);
+      line-height: 0.88;
       color: var(--fg);
-      opacity: 0.55;
-      margin: 0 -0.05em;
-      animation: colon-pulse 1s steps(1) infinite;
+      opacity: 0.5;
+      margin: 0 -0.04em;
+      animation: colon-breathe 2s var(--ease-in-out) infinite;
+    }
+    @keyframes colon-breathe {
+      0%, 100% { opacity: 0.5; transform: scale(1); }
+      50% { opacity: 0.22; transform: scale(0.97); }
     }
 
-    @keyframes colon-pulse {
-      0%, 49% { opacity: 0.55; }
-      50%, 100% { opacity: 0.18; }
-    }
-
-    /* Seconds as subtle accent */
-    .seconds {
+    /* Seconds ring + number */
+    .seconds-wrap {
       position: absolute;
-      right: 8%;
-      bottom: 18%;
+      right: 7%;
+      bottom: 16%;
+      z-index: 6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: clamp(42px, 7vw, 58px);
+      height: clamp(42px, 7vw, 58px);
+    }
+    .seconds-ring {
+      position: absolute;
+      inset: 0;
+      transform: rotate(-90deg);
+    }
+    .seconds-ring circle {
+      fill: none;
+      stroke-width: 2.5;
+      stroke-linecap: round;
+    }
+    .seconds-ring .track {
+      stroke: rgba(255, 255, 255, 0.08);
+    }
+    .seconds-ring .progress {
+      stroke: var(--accent);
+      stroke-dasharray: 113.1;
+      stroke-dashoffset: 113.1;
+      transition: stroke-dashoffset 0.9s var(--ease-out);
+      filter: drop-shadow(0 0 6px rgba(167, 139, 250, 0.45));
+    }
+    .seconds {
       font-family: "JetBrains Mono", monospace;
-      font-weight: 400;
-      font-size: clamp(0.9rem, 2.8vw, 1.35rem);
-      letter-spacing: 0.08em;
+      font-weight: 500;
+      font-size: clamp(0.85rem, 2.4vw, 1.15rem);
+      letter-spacing: 0.04em;
       color: var(--muted);
-      opacity: 0.7;
-      z-index: 5;
-      transition: opacity 0.3s var(--ease-out);
+      position: relative;
+      z-index: 1;
     }
 
-    /* Date & meta */
+    /* Meta */
     .meta {
       position: relative;
-      z-index: 5;
+      z-index: 6;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0.35rem;
-      margin-top: 0.5rem;
+      gap: 0.4rem;
+      margin-top: 0.35rem;
     }
-
     .date {
-      font-size: clamp(0.8rem, 2.2vw, 1.05rem);
-      font-weight: 400;
-      letter-spacing: 0.06em;
-      color: var(--muted);
-      text-transform: uppercase;
-    }
-
-    .brand {
-      font-size: 0.7rem;
+      font-size: clamp(0.82rem, 2.1vw, 1.05rem);
       font-weight: 500;
-      letter-spacing: 0.18em;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      text-transform: uppercase;
+      opacity: 0.9;
+    }
+    .brand {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
       text-transform: uppercase;
       color: var(--muted);
-      opacity: 0.45;
-      margin-top: 0.75rem;
+      opacity: 0.4;
+      margin-top: 0.55rem;
+      transition: opacity 0.4s var(--ease-out);
     }
 
-    /* Ambient glow */
-    .glow {
-      position: absolute;
-      width: 60%;
-      height: 40%;
-      top: 30%;
-      left: 20%;
-      background: radial-gradient(ellipse, rgba(255, 255, 255, 0.04) 0%, transparent 70%);
+    /* ── Controls (fullscreen + music) ── */
+    .controls {
+      position: fixed;
+      bottom: max(1.4rem, env(safe-area-inset-bottom));
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.55rem 0.85rem;
+      background: rgba(12, 12, 16, 0.72);
+      backdrop-filter: blur(20px) saturate(1.4);
+      -webkit-backdrop-filter: blur(20px) saturate(1.4);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      transition: opacity 0.45s var(--ease-out), transform 0.45s var(--spring);
+    }
+    .controls.idle {
+      opacity: 0.35;
+      transform: translateX(-50%) translateY(6px);
+    }
+    .controls:hover,
+    .controls:focus-within,
+    .controls.active {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .ctrl-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      color: var(--fg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.25s var(--ease-out), transform 0.2s var(--spring);
+      position: relative;
+    }
+    .ctrl-btn:active {
+      transform: scale(0.92);
+    }
+    .ctrl-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .ctrl-btn svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .ctrl-btn.playing svg {
+      fill: currentColor;
+      stroke: none;
+    }
+
+    .track-info {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      max-width: 160px;
+      padding: 0 0.35rem;
+      opacity: 0;
+      max-width: 0;
+      overflow: hidden;
+      transition: opacity 0.4s var(--ease-out), max-width 0.45s var(--spring);
+    }
+    .track-info.visible {
+      opacity: 1;
+      max-width: 160px;
+    }
+    .track-name {
+      font-size: 0.75rem;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--fg);
+    }
+    .track-progress {
+      height: 2px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 1px;
+      margin-top: 4px;
+      overflow: hidden;
+    }
+    .track-progress-bar {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      border-radius: 1px;
+      transition: width 0.25s linear;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    /* Fullscreen tip (first visit) */
+    .fs-tip {
+      position: fixed;
+      top: max(1.2rem, env(safe-area-inset-top));
+      left: 50%;
+      transform: translateX(-50%) translateY(-12px);
+      z-index: 30;
+      padding: 0.55rem 1.1rem;
+      background: rgba(20, 20, 28, 0.85);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--muted);
+      opacity: 0;
       pointer-events: none;
-      z-index: 1;
-      filter: blur(40px);
-      animation: glow-breathe 8s var(--ease-in-out) infinite;
+      transition: opacity 0.5s var(--ease-out), transform 0.5s var(--spring);
     }
-
-    @keyframes glow-breathe {
-      0%, 100% { opacity: 0.6; transform: scale(1); }
-      50% { opacity: 1; transform: scale(1.05); }
+    .fs-tip.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+      pointer-events: auto;
     }
 
     /* Reduced motion */
@@ -314,50 +497,32 @@
       .digit.flip,
       .orient-icon,
       .colon,
-      .glow {
+      .orb,
+      .seconds-ring .progress {
         animation: none !important;
+        transition: none !important;
       }
-      .orient-icon {
-        transform: rotate(90deg);
-      }
-      .colon {
-        opacity: 0.4;
-      }
+      .orient-icon { transform: rotate(90deg); }
+      .colon { opacity: 0.4; }
+      .orb { opacity: 0.2; }
     }
 
-    /* Landscape enforcement via media + JS */
+    /* Orientation media */
     @media (orientation: portrait) {
-      .app {
-        opacity: 0;
-        pointer-events: none;
-      }
-      .orient-lock {
-        opacity: 1;
-        pointer-events: auto;
-      }
+      .app { opacity: 0; pointer-events: none; }
+      .orient-lock { opacity: 1; pointer-events: auto; }
+      .controls, .fs-tip { display: none; }
     }
-
     @media (orientation: landscape) {
-      .orient-lock {
-        opacity: 0;
-        pointer-events: none;
-      }
-      .app {
-        opacity: 1;
-      }
+      .orient-lock { opacity: 0; pointer-events: none; }
+      .app { opacity: 1; }
     }
 
-    /* Small landscape refinements */
     @media (max-height: 420px) and (orientation: landscape) {
-      .digit {
-        font-size: clamp(3.2rem, 14vw, 6.5rem);
-      }
-      .clock-shell {
-        gap: 0.6rem;
-      }
-      .seconds {
-        bottom: 14%;
-      }
+      .digit { font-size: clamp(3.4rem, 15vw, 7rem); }
+      .clock-shell { gap: 0.5rem; max-height: 72vh; }
+      .seconds-wrap { bottom: 12%; }
+      .controls { bottom: 0.8rem; transform: translateX(-50%) scale(0.92); }
     }
   </style>
 </head>
@@ -369,28 +534,44 @@
     <span class="orient-brand">SplitClo</span>
   </div>
 
+  <!-- Fullscreen tip -->
+  <div class="fs-tip" id="fsTip">點擊任意處進入全螢幕</div>
+
+  <!-- Ambient -->
+  <div class="ambient" aria-hidden="true">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="noise"></div>
+  </div>
+
   <!-- Clock -->
   <div class="app" id="app">
     <div class="clock-shell">
       <div class="split-frame">
         <div class="split-half left"></div>
         <div class="split-half right"></div>
-        <div class="glow"></div>
       </div>
 
       <div class="time-row" id="timeRow" aria-label="目前時間">
-        <div class="digit-group" id="hours">
+        <div class="digit-group">
           <span class="digit" data-pos="h1">0</span>
           <span class="digit" data-pos="h2">0</span>
         </div>
         <span class="colon">:</span>
-        <div class="digit-group" id="minutes">
+        <div class="digit-group">
           <span class="digit" data-pos="m1">0</span>
           <span class="digit" data-pos="m2">0</span>
         </div>
       </div>
 
-      <div class="seconds" id="seconds">00</div>
+      <div class="seconds-wrap">
+        <svg class="seconds-ring" viewBox="0 0 40 40">
+          <circle class="track" cx="20" cy="20" r="18" />
+          <circle class="progress" id="secProgress" cx="20" cy="20" r="18" />
+        </svg>
+        <span class="seconds" id="seconds">00</span>
+      </div>
 
       <div class="meta">
         <div class="date" id="date"></div>
@@ -398,6 +579,30 @@
       </div>
     </div>
   </div>
+
+  <!-- Controls -->
+  <div class="controls" id="controls">
+    <button class="ctrl-btn" id="fsBtn" title="全螢幕" aria-label="切換全螢幕">
+      <svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+    </button>
+
+    <button class="ctrl-btn" id="musicBtn" title="上傳音樂" aria-label="上傳本地歌曲">
+      <svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+    </button>
+
+    <div class="track-info" id="trackInfo">
+      <div class="track-name" id="trackName">—</div>
+      <div class="track-progress"><div class="track-progress-bar" id="trackBar"></div></div>
+    </div>
+
+    <button class="ctrl-btn" id="playBtn" title="播放 / 暫停" aria-label="播放或暫停" style="display:none">
+      <svg viewBox="0 0 24 24" id="playIcon"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+    </button>
+
+    <input type="file" id="fileInput" accept="audio/*" />
+  </div>
+
+  <audio id="audio" preload="metadata"></audio>
 
   <script>
     (function () {
@@ -408,14 +613,31 @@
         m2: document.querySelector('[data-pos="m2"]'),
       };
       const secondsEl = document.getElementById("seconds");
+      const secProgress = document.getElementById("secProgress");
       const dateEl = document.getElementById("date");
       const orientLock = document.getElementById("orientLock");
       const app = document.getElementById("app");
+      const controls = document.getElementById("controls");
+      const fsBtn = document.getElementById("fsBtn");
+      const musicBtn = document.getElementById("musicBtn");
+      const playBtn = document.getElementById("playBtn");
+      const playIcon = document.getElementById("playIcon");
+      const fileInput = document.getElementById("fileInput");
+      const audio = document.getElementById("audio");
+      const trackInfo = document.getElementById("trackInfo");
+      const trackName = document.getElementById("trackName");
+      const trackBar = document.getElementById("trackBar");
+      const fsTip = document.getElementById("fsTip");
+
+      const CIRC = 2 * Math.PI * 18;
+      secProgress.style.strokeDasharray = CIRC;
 
       const weekdays = ["週日", "週一", "週二", "週三", "週四", "週五", "週六"];
       const months = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
 
       let last = { h1: "", h2: "", m1: "", m2: "", s: "" };
+      let controlsIdleTimer = null;
+      let hasEnteredFs = false;
 
       function pad(n) {
         return n.toString().padStart(2, "0");
@@ -426,21 +648,14 @@
         const h = pad(now.getHours());
         const m = pad(now.getMinutes());
         const s = pad(now.getSeconds());
+        const ms = now.getMilliseconds();
 
-        const next = {
-          h1: h[0],
-          h2: h[1],
-          m1: m[0],
-          m2: m[1],
-          s: s,
-        };
+        const next = { h1: h[0], h2: h[1], m1: m[0], m2: m[1], s };
 
-        // Animate only changed digits
         Object.keys(digits).forEach((key) => {
           if (next[key] !== last[key]) {
             const el = digits[key];
             el.classList.remove("flip");
-            // Force reflow
             void el.offsetWidth;
             el.textContent = next[key];
             el.classList.add("flip");
@@ -453,7 +668,9 @@
           last.s = next.s;
         }
 
-        // Date (update less frequently)
+        const progress = (now.getSeconds() + ms / 1000) / 60;
+        secProgress.style.strokeDashoffset = CIRC * (1 - progress);
+
         const day = now.getDate();
         const weekday = weekdays[now.getDay()];
         const month = months[now.getMonth()];
@@ -462,9 +679,7 @@
 
       function checkOrientation() {
         const isPortrait = window.matchMedia("(orientation: portrait)").matches;
-        // Also check dimensions as fallback for some devices
         const portraitBySize = window.innerHeight > window.innerWidth;
-
         if (isPortrait || portraitBySize) {
           orientLock.classList.add("visible");
           app.classList.add("hidden");
@@ -474,11 +689,110 @@
         }
       }
 
-      // Initial
+      function isFullscreen() {
+        return !!(document.fullscreenElement || document.webkitFullscreenElement);
+      }
+
+      async function enterFullscreen() {
+        const el = document.documentElement;
+        try {
+          if (el.requestFullscreen) await el.requestFullscreen();
+          else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+          hasEnteredFs = true;
+          fsTip.classList.remove("show");
+        } catch (e) {}
+      }
+
+      async function exitFullscreen() {
+        try {
+          if (document.exitFullscreen) await document.exitFullscreen();
+          else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        } catch (e) {}
+      }
+
+      function toggleFullscreen() {
+        if (isFullscreen()) exitFullscreen();
+        else enterFullscreen();
+      }
+
+      function showFsTip() {
+        if (hasEnteredFs || isFullscreen()) return;
+        setTimeout(() => fsTip.classList.add("show"), 1200);
+        setTimeout(() => fsTip.classList.remove("show"), 5200);
+      }
+
+      musicBtn.addEventListener("click", () => fileInput.click());
+
+      fileInput.addEventListener("change", (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const url = URL.createObjectURL(file);
+        audio.src = url;
+        trackName.textContent = file.name.replace(/\.[^/.]+$/, "") || "本地歌曲";
+        trackInfo.classList.add("visible");
+        playBtn.style.display = "flex";
+        audio.play().then(() => {
+          playBtn.classList.add("playing");
+          playIcon.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+        }).catch(() => {});
+        wakeControls();
+      });
+
+      playBtn.addEventListener("click", () => {
+        if (audio.paused) {
+          audio.play();
+          playBtn.classList.add("playing");
+          playIcon.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+        } else {
+          audio.pause();
+          playBtn.classList.remove("playing");
+          playIcon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
+        }
+        wakeControls();
+      });
+
+      audio.addEventListener("timeupdate", () => {
+        if (!audio.duration) return;
+        const pct = (audio.currentTime / audio.duration) * 100;
+        trackBar.style.width = pct + "%";
+      });
+
+      audio.addEventListener("ended", () => {
+        playBtn.classList.remove("playing");
+        playIcon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
+        trackBar.style.width = "0%";
+      });
+
+      function wakeControls() {
+        controls.classList.remove("idle");
+        controls.classList.add("active");
+        clearTimeout(controlsIdleTimer);
+        controlsIdleTimer = setTimeout(() => {
+          controls.classList.add("idle");
+          controls.classList.remove("active");
+        }, 3500);
+      }
+
+      fsBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleFullscreen();
+        wakeControls();
+      });
+
+      document.addEventListener("click", (e) => {
+        if (!hasEnteredFs && !isFullscreen() && !e.target.closest(".controls") && !e.target.closest(".fs-tip")) {
+          enterFullscreen();
+        }
+        wakeControls();
+      });
+
+      document.addEventListener("touchstart", () => wakeControls(), { passive: true });
+
       update();
       checkOrientation();
+      showFsTip();
+      wakeControls();
 
-      // Tick every second aligned to real second
       function scheduleNext() {
         const now = Date.now();
         const delay = 1000 - (now % 1000);
@@ -487,22 +801,14 @@
           scheduleNext();
         }, delay);
       }
-      scheduleNext();
+      setInterval(update, 80);
 
-      // Orientation
-      window.addEventListener("orientationchange", () => {
-        setTimeout(checkOrientation, 100);
-      });
+      window.addEventListener("orientationchange", () => setTimeout(checkOrientation, 120));
       window.addEventListener("resize", checkOrientation);
-      // Media query listener
       const mq = window.matchMedia("(orientation: portrait)");
-      if (mq.addEventListener) {
-        mq.addEventListener("change", checkOrientation);
-      } else if (mq.addListener) {
-        mq.addListener(checkOrientation);
-      }
+      if (mq.addEventListener) mq.addEventListener("change", checkOrientation);
+      else if (mq.addListener) mq.addListener(checkOrientation);
 
-      // Prevent zoom / scroll
       document.addEventListener("gesturestart", (e) => e.preventDefault());
       document.addEventListener("touchmove", (e) => {
         if (e.touches.length > 1) e.preventDefault();
